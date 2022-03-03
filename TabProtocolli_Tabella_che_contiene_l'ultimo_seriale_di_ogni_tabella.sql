@@ -1,0 +1,1 @@
+SELECT * FROM TabProtocolli WHERE ProtCProtocollo = 'TabAttComm';

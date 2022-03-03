@@ -1,0 +1,1 @@
+SELECT * FROM [TabAttComm] INNER JOIN [CommesseAttributi] ON TacaCSer = AComCRTaca INNER JOIN [ValoriAttributo] ON VlatCSer = AComCRVlat;
