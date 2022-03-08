@@ -1,0 +1,32 @@
+-- SELECT * FROM ArticoliBase;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabColori ON artbCRtabc = TabCCser;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TipologiaContratto ON ArtbCRTpCon = TpConCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN Aziende ON ArtbCRTazi = TaziCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabGruppiCosti ON ArtbCSerTgca = TgcoCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabUnitaMisura ON ArtbCSerTums = TumsCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN GruppiAttributo ON ArtbCRTgaa = TgaaCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabTipoArticolo ON ArtbCSerTpar = TparCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabTipoCopertura ON ArtbCSerTpcp = TpcpCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabTipoApprovigionamento ON ArtbCSerTpap = TpapCSer; 
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabTipoUtilizzo ON ArtbCSerTput = TputCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabTipoGestioneLM ON ArtbCSerTglm = TglmCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabImballi ON ArtbCSerTimbAt = TimbCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabImballi ON ArtbCSerTimbAt = TimbCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabAliquoteIVA ON ArtbCSerTali = TaliCser;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabNomenclatureCombinate ON ArtbCSerTncc = TnccCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabContropartite ON ArtbCSerTcca = TccaCSer; 
+-- SELECT * FROM ArticoliBase t1 LEFT OUTER JOIN ArticoliBase t2 ON t1.ArtbCRArtbBdg = t2.ArtbCSer; -- Forse non necessaria
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN ModalitaCalcoloConsumi ON ArtbCRMccon = McconCSer;
+-- SELECT * FROM ArticoliBase t1 LEFT OUTER JOIN ArticoliBase t2 ON t1.ArtbCRSostCons = t2.ArtbCSer; -- Forse non necessaria
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN KanbanContenitori ON ArtbCRKanco = KanCoCSer;
+-- SELECT * FROM ArticoliBase LEFT OUTER JOIN TabUnitaMisura ON ArtbCRTumsQtaMinVen = TumsCSer;
+-- SELECT * FROM ArticoliBase t1 LEFT OUTER JOIN ArticoliBase t2 ON t1.artbCRArtbMPS = t2.ArtbCSer;
+-- SELECT ttn FROM ArticoliBase LEFT OUTER JOIN Model.SerTipoNotaG [ = ] (Result.TtnoCSer); SELECT * FROM TabTipiNota; -- Da controllare
+-- SELECT TblaDDescrizione FROM ArticoliBase LEFT OUTER JOIN Tbla ON artbFCopLottoCSer = Tbla.TblaCSer;
+-- SELECT TblaDDescrizione FROM ArticoliBase LEFT OUTER JOIN Tbla ON artbFCopScortaCSer = Tbla.TblaCSer;
+-- SELECT TblaDDescrizione FROM ArticoliBase LEFT OUTER JOIN Tbla ON artbFAbilConsCSer = Tbla.TblaCSer;
+-- SELECT TblaDDescrizione FROM ArticoliBase LEFT OUTER JOIN Tbla ON artbFAbilConsCSer = Tbla.TblaCSer;
+
+-- SELECT * FROM ArticoliBase INNER JOIN ArticoliAnnotazioni ON ArtbCSer = ArtnCSerArtb INNER JOIN TabTipiNota ON ArtnCRTtno = TtnoCser;
+
+-- SELECT * FROM ArticoliBase INNER JOIN ArticoliAttributi ON ArtBCSer = ArtaCSerArtb INNER JOIN ValoriAttributo ON ArtaCSerVlat=VlatCSer;
