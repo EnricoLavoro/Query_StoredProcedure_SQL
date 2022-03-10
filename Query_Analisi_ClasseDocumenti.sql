@@ -1,0 +1,33 @@
+-- STRUTTURA FORM - CLASSE DOCUMENTI
+
+-- SELECT * FROM TabCausaliMagazzino;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabCausaliMagazzino ON MCSOVersUltimafaseCRTcmg = TcmgCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN FilterStOpDw ON MCSOCRFiltroBudget = fsodwCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN DefClasseStOp ON MCSOCrdcsom = DcsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN ConfStOp ON MCSOCrcnso = CnsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabStatiStOp ON MCSOCRTssoirp = TssoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabGruppiStOp ON MCSOCRTgsorr = TgsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabCausaliStOp ON MCSOCrtcso = TcsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN GruppiCausaliStOp ON MCSOCRGcso = GcsoCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabUnitaMisura ON MCSOCrtumsom = TumsCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN SottoConti ON MCSOCrascosf = AscoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabPrioDepStOp ON MCSOCRTpalp = TPDSOCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabDepositi ON MCSOCRTdpSP = TdpsCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabClasseCosto ON MCSOCRTclc = TclcCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN ArticoliBase ON MCSOCRartbnonana = ArtbCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN AnaDispParametriMaster ON MCSOCRAdpm = AdpmCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN FiltroArticoli ON MCSOCRFartCalcQtaDisp = FartCser;
+-- SELECT * FROM ClassiStOpMaster t1 INNER JOIN ClassiStOpMaster t2 ON t1.MCSOCRMcsoLog = t2.MCSOCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN FiltriSoggetti ON MCSOCRFSogg = FSoggCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TipoListino ON MCSOCRTlis = TLisCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN PermessiUtente ON MCSOCRPeUsM = PeUsMCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN Uffici ON MCSOCRUffi = uffiCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabTipoOggetto ON MCSOCRTTog = TTogCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabTipiNota ON MCSOFattPACRTtno = TtnoCser;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabGruppiStOp ON MCSOFattPaCRTgso_DDT = TgsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabGruppiStOp ON MCSOFattPaCRTgso_DDT = TgsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabGruppiStOp ON MCSOFattPaCRTgso_CON = TgsoCSer;
+-- SELECT * FROM ClassiStOpMaster LEFT OUTER JOIN TabGruppiStOp ON MCSOFattPaCRTgso_FAT = TgsoCSer;
+
+-- SELECT * FROM PostProcessingStOpRighe LEFT OUTER JOIN TabPostProcessingStOp ON RPPSOCRTppso = TPPSOCSer;
+-- SELECT * FROM TabPostProcessingStOp ORDER BY TPPSOCTppso ASC;
