@@ -1,0 +1,21 @@
+-- STRUTTURA ORDINE CLIENTE
+
+-- SELECT * FROM IstTotStOpMColl; - KTTIS
+-- SELECT * FROM IstBaseStOpMaster; -- MBAIS
+-- SELECT * FROM TabStatiStOp;
+-- SELECT * FROM IstCComAtStOpMColl; -- KCAIS
+-- SELECT * FROM IstSpedStOpMColl; -- KSPIS
+-- SELECT * FROM IstBaseStOpMaster LEFT OUTER JOIN IstAnagStOpMColl ON MbaisCSer = KanisCRAsog;
+-- SELECT * FROM IstRifEstStOpMColl;
+-- SELECT * FROM IstBaseStOpMaster LEFT OUTER JOIN TabCausaliStOp ON MbaisCRTcso = TcsoCSer;
+-- SELECT * FROM IstBaseStOpMaster LEFT OUTER JOIN TabAttComm ON MbaisCRTaca = TacaCSer;
+-- SELECT * FROM IstBaseStOpMaster LEFT OUTER JOIN TabStatiStOp ON MbaisCRTsso = TssoCSer;
+-- SELECT * FROM IstGrStatStOpMColl LEFT OUTER JOIN GruppiStatisticiRighe ON KgsisCRvgrs = RgrsCSer;
+-- SELECT * FROM IstAnagStOpMColl LEFT OUTER JOIN Soggetti ON KanisCRAsog  = AsogCSer;
+-- SELECT * FROM IstAnagStOpMColl LEFT OUTER JOIN TabMonete ON KanisCRAsog  = TmonCSer;
+-- SELECT * FROM IstCComAtStOpMColl LEFT OUTER JOIN TipoListino ON KCAISCRTlis = TLisCser;
+-- SELECT * FROM IstSpedStOpMColl LEFT OUTER JOIN TabTrasporto ON KSPISCRTtra = TtraCser;
+-- SELECT * FROM IstSpedStOpMColl LEFT OUTER JOIN TabCondResaSped ON KSPISCRTcrs = TcrsCser;
+-- SELECT * FROM IstBaseStOpMaster LEFT OUTER JOIN MasterCausaliMovContabili ON MbaisCRMcmc = McmcCSer;
+-- SELECT * FROM IstCComAtStOpMColl LEFT OUTER JOIN TabModPagInc ON KCAISCRTmpi = TmpaCSer;
+-- SELECT * FROM IstBaseStOpMaster LEFT OUTER JOIN MasterMovContabile ON MbaisCRMmoc = MmocCSer;
