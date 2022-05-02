@@ -60,9 +60,9 @@ SELECT * FROM #TabMedia;
 
 SELECT TDev.Articolo,
 	   TDev.Fornitore,
-	   1.96 * SQRT(TMedia.MediaLeadTime * POWER(TDev.DeviazioneStandardQuantita,2) + POWER(TDev.DeviazioneStandardLeadTime,2) * POWER(TMedia.MediaQuantita,2)) AS ScortaMinima
-FROM #TabMedia AS TMedia INNER JOIN #TabDeviazioneStandard AS TDev ON TMedia.Articolo = TDev.Articolo 
-AND TMedia.Fornitore = TDev.Fornitore;
+	   artfXCoeffCop * SQRT(TMedia.MediaLeadTime * POWER(TDev.DeviazioneStandardQuantita,2) + POWER(TDev.DeviazioneStandardLeadTime,2) * POWER(TMedia.MediaQuantita,2)) AS ScortaMinima--, *
+FROM #TabMedia AS TMedia INNER JOIN #TabDeviazioneStandard AS TDev ON TMedia.Articolo = TDev.Articolo AND TMedia.Fornitore = TDev.Fornitore
+INNER JOIN ArticoliFornitori ON TDev.Articolo = ArtfCSerArtb AND TDev.Fornitore = ArtfCSerAncf;
 
 DROP TABLE #TabOrdiniArticolo;
 DROP TABLE #TabMedia;
