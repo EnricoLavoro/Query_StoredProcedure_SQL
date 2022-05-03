@@ -56,14 +56,26 @@ GROUP BY T.Articolo, T.Fornitore
 ORDER BY 1;
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-SELECT * FROM #TabMedia;
 
 SELECT TDev.Articolo,
 	   TDev.Fornitore,
-	   artfXCoeffCop * SQRT(TMedia.MediaLeadTime * POWER(TDev.DeviazioneStandardQuantita,2) + POWER(TDev.DeviazioneStandardLeadTime,2) * POWER(TMedia.MediaQuantita,2)) AS ScortaMinima--, *
+	   TMedia.MediaQuantita,
+	   TMedia.MediaLeadTime,
+	   TDev.DeviazioneStandardQuantita,
+	   TDev.DeviazioneStandardLeadTime,
+	   artfXCoeffCop * SQRT(TMedia.MediaLeadTime * POWER(TDev.DeviazioneStandardQuantita,2) + POWER(TDev.DeviazioneStandardLeadTime,2) * POWER(TMedia.MediaQuantita,2)) AS ScortaMinima
+INTO #TabResult
 FROM #TabMedia AS TMedia INNER JOIN #TabDeviazioneStandard AS TDev ON TMedia.Articolo = TDev.Articolo AND TMedia.Fornitore = TDev.Fornitore
 INNER JOIN ArticoliFornitori ON TDev.Articolo = ArtfCSerArtb AND TDev.Fornitore = ArtfCSerAncf;
+
+---------------------------------------- Aggiornamento del LeadTime ----------------------------------------
+
+UPDATE [dbo].[ArticoliFornitori]
+   SET ArtfCSerPrprNLeadTime = T.MediaLeadTime,
+       ArtfCSerPrprQScortaMin = T.ScortaMinima
+FROM #TabResult AS T INNER JOIN ArticoliFornitori ON T.Articolo = ArtfCSerArtb AND T.Fornitore = ArtfCSerAncf;
 
 DROP TABLE #TabOrdiniArticolo;
 DROP TABLE #TabMedia;
 DROP TABLE #TabDeviazioneStandard;
+DROP TABLE #TabResult;
