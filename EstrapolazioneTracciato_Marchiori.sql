@@ -1,6 +1,7 @@
 USE up_marchioricontino;
 
-IF OBJECT_ID('tempdb..#TabContratti') IS NOT NULL DROP TABLE #TabContratti;
+IF OBJECT_ID('tempdb..#TabContratti')   IS NOT NULL DROP TABLE #TabContratti;
+IF OBJECT_ID('tempdb..##OutputResult')	IS NOT NULL DROP TABLE ##OutputResult;
 
 SELECT DISTINCT MbaisCSer, MbaisCMbais, MbaisCRAsog, TacaCRAsog, T.Attr1, T.Val1, T.Attr2, T.Val2,
 CASE WHEN CHARINDEX('CANONE AFFITTO',RbaisDaart) > 0 THEN 
@@ -63,8 +64,6 @@ INNER JOIN (SELECT T1.MbaisCSer AS Serial, T1.TgrsCTgrs AS Attr1, T1.RgrsCRgrs A
 	WHERE T1.TgrsCTgrs='CTISA' AND T2.TgrsCTgrs='TUISA') T ON MbaisCSer = T.Serial
 WHERE MbaisCRMcso=23 AND AttrCAttr='VCI';
 
-SELECT * FROM #TabContratti;
-
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 SELECT ROW_NUMBER() OVER(ORDER BY M.MbaisCSer ASC) AS Progressivo,
@@ -85,14 +84,15 @@ MbaisCRMmoc AS CodicePagamento,
 SUBSTRING(SogClienti.AsogDatIBANBE,5,5) AS CodiceABI,
 SUBSTRING(SogClienti.AsogDatIBANBE,10,5) AS CodiceCAB,
 SogClienti.AsogDatIBANBE AS CodiceIBAN,
-CASE WHEN TabC.CodArtxPlus = 'CAN'
-	THEN TabC.PrezzoUnitario
-	ELSE (SELECT PrezzoUnitario FROM #TabContratti WHERE #TabContratti.MbaisCRAsog = SogClienti.AsogCSer AND #TabContratti.TacaCRAsog = SogControparte.AsogCSer AND #TabContratti.CodArtxPlus = 'CAN') 
-END AS ValoreAffittoISA,
+TabAttr.KatisNvalatt AS ValoreAffittoISA,
+--CASE WHEN TabC.CodArtxPlus = 'CAN'
+--	THEN TabC.PrezzoUnitario
+--	ELSE (SELECT PrezzoUnitario FROM #TabContratti WHERE #TabContratti.MbaisCRAsog = SogClienti.AsogCSer AND #TabContratti.TacaCRAsog = SogControparte.AsogCSer AND #TabContratti.CodArtxPlus = 'CAN') 
+--END AS ValoreAffittoISA,
 TabC.Val1 AS ConteggiaTrattativaISA,
 TabC.Val2 AS TrattativaUnilateraleISA,
-NULL AS NonUtilizzato,
-NULL AS NonUtilizzato,
+NULL AS NonUtilizzato1,
+NULL AS NonUtilizzato2,
 ROW_NUMBER() OVER(PARTITION BY M.MbaisCSer, M.MbaisCMbais ORDER BY M.MbaisCSer ASC) AS NumeroRiga,
 TABC.CodArtxPlus AS CodArtxPlus,
 TabC.Desc1 AS DescMov1,
@@ -109,7 +109,7 @@ TabC.NPerCompetenza,
 TabC.CodIVAxPlus,
 TabC.CodContPartxPlus,
 CASE WHEN T.SogRit IS NULL THEN 'N' ELSE T.SogRit END AS SogRit 
-
+INTO ##OutputResult
 FROM IstBaseStOpMaster AS M
 INNER JOIN TabCausaliStOp ON M.MbaisCRTcso = TcsoCSer
 INNER JOIN TabAttComm AS TabAtt  ON M.MbaisCRTaca = TabAtt.TacaCSer
@@ -136,9 +136,17 @@ LEFT JOIN (SELECT AsogCSer, RgrsCRgrs AS SogRit
 
 INNER JOIN #TabContratti AS TabC ON TabC.MbaisCRAsog = SogClienti.AsogCSer AND TabC.TacaCRAsog = SogControparte.AsogCSer
 
-WHERE MbaisCRMcso = 25 AND TG0.TgrsCTgrs = 'EXPLUS' AND R0.RgrsCRgrs = 'S' AND TG1.TgrsCTgrs='TSO' AND TG2.TgrsCTgrs='TSO'
+INNER JOIN (SELECT MbaisCSer, KatisNvalatt FROM IstBaseStOpMaster
+	INNER JOIN IstAttrStOpMColl ON KatisCRMbais = MbaisCSer
+	INNER JOIN Attributi ON AttrCSer = KatisCRattr
+	WHERE AttrCAttr = 'VAISA') AS TabAttr ON TabAttr.MbaisCSer = TabC.MbaisCSer
+
+WHERE MbaisCRMcso IN (25,29,31,33) AND TG0.TgrsCTgrs = 'EXPLUS' AND R0.RgrsCRgrs = 'S' AND TG1.TgrsCTgrs='TSO' AND TG2.TgrsCTgrs='TSO'
 -- AND M.MbaisTins BETWEEN DataDa AND DataA;
-ORDER BY SogControparte.AsogCSer ASC
+ORDER BY SogControparte.AsogCSer ASC;
 
+SELECT * FROM #TabContratti;
+SELECT * FROM ##OutputResult;
 
-IF OBJECT_ID('tempdb..#TabContratti') IS NOT NULL DROP TABLE #TabContratti;
+IF OBJECT_ID('tempdb..#TabContratti')	IS NOT NULL DROP TABLE #TabContratti;
+IF OBJECT_ID('tempdb..##OutputResult')	IS NOT NULL DROP TABLE ##OutputResult;
