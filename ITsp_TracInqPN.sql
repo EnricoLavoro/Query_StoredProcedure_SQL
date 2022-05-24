@@ -1,6 +1,6 @@
 USE [up_marchioricontino]
 GO
-/****** Object:  StoredProcedure [dbo].[ITsp_TracInqPN]    Script Date: 20/05/2022 17:49:52 ******/
+/****** Object:  StoredProcedure [dbo].[ITsp_TracInqPN]    Script Date: 23/05/2022 13:58:25 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -19,11 +19,10 @@ BEGIN
 	IF OBJECT_ID('tempdb..#TabContratti')   IS NOT NULL DROP TABLE #TabContratti;
 	IF OBJECT_ID('tempdb..##OutputResult')	IS NOT NULL DROP TABLE ##OutputResult;
 
-	SELECT DISTINCT MbaisCSer, MbaisCMbais, MbaisCRAsog, TacaCRAsog, T.Attr1, T.Val1, T.Attr2, T.Val2
+	SELECT DISTINCT MbaisCMbais, MbaisCRTaca, MbaisTrichiesta, T.Attr1, T.Val1, T.Attr2, T.Val2, T.Attr3, T.Val3
 	INTO #TabContratti
 	FROM IstBaseStOpMaster
-	INNER JOIN TabAttComm ON MbaisCRTaca = TacaCser
-	INNER JOIN (SELECT T1.MbaisCSer AS Serial, T1.TgrsCTgrs AS Attr1, T1.RgrsCRgrs AS Val1, T2.TgrsCTgrs AS Attr2, T2.RgrsCRgrs AS Val2
+	INNER JOIN (SELECT T1.MbaisCSer AS Serial, T1.TgrsCTgrs AS Attr1, T1.RgrsCRgrs AS Val1, T2.TgrsCTgrs AS Attr2, T2.RgrsCRgrs AS Val2, T3.AttrCAttr AS Attr3, T3.KatisNvalatt AS Val3
 		FROM
 		(SELECT MbaisCSer, TgrsCTgrs, RgrsCRgrs
 		FROM IstBaseStopMaster
@@ -37,7 +36,12 @@ BEGIN
 		RIGHT JOIN TabGruppiStatistici AS TGRS1 ON TGRS1.TgrsCSer = KGSIS1.KgsisCRgrs
 		LEFT JOIN GruppiStatisticiRighe AS RGRS1 ON RGRS1.RgrsCSer = KGSIS1.KgsisCRvgrs) T2
 		ON T1.MbaisCSer = T2.MbaisCSer
-		WHERE T1.TgrsCTgrs='CTISA' AND T2.TgrsCTgrs='TUISA') T ON MbaisCSer = T.Serial
+		INNER JOIN 
+		(SELECT MbaisCSer, KatisNvalatt, AttrCAttr
+		FROM IstBaseStOpMaster INNER JOIN IstAttrStOpMColl ON KatisCRMbais = MbaisCSer
+		INNER JOIN Attributi ON AttrCSer = KatisCRattr) T3
+		ON T2.MbaisCSer = T3.MbaisCSer
+		WHERE T1.TgrsCTgrs='CTISA' AND T2.TgrsCTgrs='TUISA' AND T3.AttrCAttr = 'VAISA') T ON MbaisCSer = T.Serial
 	WHERE MbaisCRMcso=23;
 
 	---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -46,21 +50,30 @@ BEGIN
 	NULL AS Nullo,
 	LEFT(TcsoCTcso,1) AS CausaleDocumento, 
 	'P_'+RIGHT(M.MbaisCMbais,13) AS NumeroDocumento,
-	M.MbaisTins AS DataEsportazione,
+	CONVERT(VARCHAR(10), M.MbaisTins, 111) AS DataEsportazione,
 	NULL AS SerieDocumento,
 	'SEDEP' AS SedeEmissione,
 	CASE WHEN R1.RgrsCRgrs = 'I' THEN 'Q' ELSE R1.RGrsCRgrs END AS TipoSoggetto,
-	SogClienti.AsogCSer AS CodiceCliente,
-	R1.RgrsDrgrs AS DescrizioneCliente,
-	SogControparte.AsogCSer AS CodiceControparte,
-	R2.RgrsDrgrs AS DescrizioneControparte,
+	SogClienti.AsogCAsog AS CodiceCliente,
+	SogClienti.AsogDAsog AS DescrizioneCliente,
+	SogControparte.AsogCAsog AS CodiceControparte,
+	SogControparte.AsogDAsog AS DescrizioneControparte,
 	TabC.MbaisCMbais AS RiferimentoContratto,
 	NULL AS AnnotazioneTestata,
-	MbaisCRMmoc AS CodicePagamento,
-	SUBSTRING(SogClienti.AsogDatIBANBE,5,5) AS CodiceABI,
-	SUBSTRING(SogClienti.AsogDatIBANBE,10,5) AS CodiceCAB,
-	SogClienti.AsogDatIBANBE AS CodiceIBAN,
-	TabAttr.KatisNvalatt AS ValoreAffittoISA,
+	TmpaCTmpa AS CodicePagamento,
+	CASE WHEN SUBSTRING(SogClienti.AsogDatIBANBE,5,5) IS NULL OR SUBSTRING(SogClienti.AsogDatIBANBE,5,5) = ''
+	THEN NULL
+	ELSE SUBSTRING(SogClienti.AsogDatIBANBE,5,5)
+	END AS CodiceABI,
+	CASE WHEN SUBSTRING(SogClienti.AsogDatIBANBE,10,5) IS NULL OR SUBSTRING(SogClienti.AsogDatIBANBE,10,5) = ''
+	THEN NULL
+	ELSE SUBSTRING(SogClienti.AsogDatIBANBE,10,5)
+	END AS CodiceCAB,
+	CASE WHEN SogClienti.AsogDatIBANBE IS NULL OR SogClienti.AsogDatIBANBE = ''
+	THEN NULL
+	ELSE SogClienti.AsogDatIBANBE
+	END AS CodiceIBAN,
+	TabC.Val3 AS ValoreAffittoISA,
 	--CASE WHEN TabC.CodArtxPlus = 'CAN'
 	--	THEN TabC.PrezzoUnitario
 	--	ELSE (SELECT PrezzoUnitario FROM #TabContratti WHERE #TabContratti.MbaisCRAsog = SogClienti.AsogCSer AND #TabContratti.TacaCRAsog = SogControparte.AsogCSer AND #TabContratti.CodArtxPlus = 'CAN') 
@@ -97,7 +110,10 @@ BEGIN
 	0 AS Sconto2,
 	'-' AS SegnoMovimento,
 	YEAR(MbaisTins) AS APerCompetenza,
-	'M' AS TPerCompetenza,
+	'M' + CASE WHEN MONTH(M.MbaisTins) < 10
+	THEN '0' + CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
+	ELSE CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
+	END + ' ' + UPPER(SUBSTRING(DATENAME(month,M.MbaisTins),1,1)) + SUBSTRING(DATENAME(month,M.MbaisTins),2,LEN(DATENAME(month,M.MbaisTins))-1) AS TPerCompetenza,
 	12 AS NPerCompetenza,
 	TaliCTali AS CodIVAxPlus,
 	AscoCAsco AS CodContPartxPlus,
@@ -122,6 +138,8 @@ BEGIN
 	INNER JOIN TabAttComm ON M.MbaisCRTaca = TacaCser
 	INNER JOIN ArticoliBase ON ArtbCSer = RbaisCRArtb
 
+	INNER JOIN IstCComAtStOpMColl ON M.MbaisCSer = KCAISCser
+	INNER JOIN TabModPagInc ON KCAISCRTmpi=TmpaCSer
 	INNER JOIN TabCausaliStOp ON M.MbaisCRTcso = TcsoCSer
 	INNER JOIN TabAttComm AS TabAtt  ON M.MbaisCRTaca = TabAtt.TacaCSer
 	INNER JOIN IstGrStatStOpMColl    ON KgsisCRMbais = MbaisCSer
@@ -145,12 +163,7 @@ BEGIN
 		INNER JOIN GruppiStatisticiRighe ON RgrsCSer = LsgsCRifVgrs
 		WHERE TgrsCTgrs='SOGRIT') AS T ON SogClienti.AsogCSer = T.AsogCSer
 
-	INNER JOIN #TabContratti AS TabC ON TabC.MbaisCRAsog = SogClienti.AsogCSer AND TabC.TacaCRAsog = SogControparte.AsogCSer
-
-	INNER JOIN (SELECT MbaisCSer, KatisNvalatt FROM IstBaseStOpMaster
-		INNER JOIN IstAttrStOpMColl ON KatisCRMbais = MbaisCSer
-		INNER JOIN Attributi ON AttrCSer = KatisCRattr
-		WHERE AttrCAttr = 'VAISA') AS TabAttr ON TabAttr.MbaisCSer = TabC.MbaisCSer
+	INNER JOIN #TabContratti AS TabC ON TabC.MbaisCRTaca = M.MbaisCRTaca AND M.MbaisTrichiesta = TabC.MbaisTrichiesta
 
 	WHERE MbaisCRMcso IN (25,29,31,33) AND TG0.TgrsCTgrs = 'EXPLUS' AND R0.RgrsCRgrs = 'S' AND TG1.TgrsCTgrs='TSO' AND TG2.TgrsCTgrs='TSO'
 	AND M.MbaisTins BETWEEN @parDaData AND @parAData
@@ -200,3 +213,4 @@ BEGIN
 	IF OBJECT_ID('tempdb..#TabContratti')	IS NOT NULL DROP TABLE #TabContratti;
 	IF OBJECT_ID('tempdb..##OutputResult')	IS NOT NULL DROP TABLE ##OutputResult;
 END
+
