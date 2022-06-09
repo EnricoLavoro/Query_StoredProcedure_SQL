@@ -1,6 +1,6 @@
 USE [up_marchioricontino]
 GO
-/****** Object:  StoredProcedure [dbo].[ITsp_TracProPN]    Script Date: 24/05/2022 16:16:34 ******/
+/****** Object:  StoredProcedure [dbo].[ITsp_TracPro]    Script Date: 09/06/2022 17:55:14 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -9,7 +9,7 @@ GO
 -- Author:		Enrico Piccin
 -- Create date: 12 Maggio 2022
 -- =============================================
-ALTER PROCEDURE [dbo].[ITsp_TracProPN] (@parDaData AS DATE, @parAData AS DATE, @par_path AS VARCHAR(50), @outEsito AS VARCHAR(100) OUTPUT)
+ALTER PROCEDURE [dbo].[ITsp_TracPro] (@parDaData AS DATE, @parAData AS DATE, @par_path AS VARCHAR(50), @outEsito AS VARCHAR(100) OUTPUT)
 AS
 BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from
@@ -54,7 +54,7 @@ BEGIN
 	NULL AS Nullo,
 	LEFT(TcsoCTcso,1) AS CausaleDocumento, 
 	'P_'+RIGHT(M.MbaisCMbais,13) AS NumeroDocumento,
-	CONVERT(VARCHAR(10), M.MbaisTins, 111) AS DataEsportazione,
+	CONVERT(VARCHAR(10), M.MbaisTins,103) AS DataEsportazione,
 	NULL AS SerieDocumento,
 	'SEDEP' AS SedeEmissione,
 	R2.RgrsCrgrs AS TipoSoggetto,
@@ -117,7 +117,7 @@ BEGIN
 	'M' + CASE WHEN MONTH(M.MbaisTins) < 10
 	THEN '0' + CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
 	ELSE CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
-	END + ' ' + UPPER(SUBSTRING(DATENAME(month,M.MbaisTins),1,1)) + SUBSTRING(DATENAME(month,M.MbaisTins),2,LEN(DATENAME(month,M.MbaisTins))-1) AS TPerCompetenza,
+	END AS TPerCompetenza,
 	12 AS NPerCompetenza,
 	TaliCTali AS CodIVAxPlus,
 	AscoCAsco AS CodContPartxPlus,
@@ -193,7 +193,7 @@ BEGIN
 	WHERE CodArtxPlus='CAN'
 	GROUP BY CodiceCliente, Compenso, MaxVal.MaxProg;
 
-	-- =======================================================================================================================================
+	---- =======================================================================================================================================
 
 	SELECT * FROM #TabCompensi;
 	DECLARE @numCompensi INT = @@ROWCOUNT;
@@ -204,18 +204,20 @@ BEGIN
 
 	IF OBJECT_ID('tempdb..#TabInsert')	IS NOT NULL DROP TABLE #TabInsert;
 
-	SELECT Progressivo+1 AS NuovoProg, * 
+	SELECT Progressivo+1 AS NuovoProg, *
 	INTO #TabInsert
 	FROM ##OutputResult T1 
 	WHERE Progressivo=(SELECT TOP(1) MaxProg FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt);
 	
 	ALTER TABLE #TabInsert DROP COLUMN Progressivo;
-	INSERT INTO ##OutputResult SELECT * FROM #TabInsert;
+
+	INSERT INTO ##OutputResult 
+	SELECT * FROM #TabInsert;
 
 	UPDATE ##OutputResult SET
 	CausaleDocumento='C',
 	NumeroDocumento='COMP_'+(SELECT TOP(1) T1.CodiceCliente FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt),
-	DataEsportazione=CONVERT(VARCHAR(10), @parAData, 111),
+	DataEsportazione=CONVERT(VARCHAR(10), @parAData, 103),
 	-- SedeEmissione='SEDEP',
 	TipoSoggetto='C',
 	CodiceControparte=NULL,
@@ -235,9 +237,8 @@ BEGIN
 	APerCompetenza=YEAR(@parAData),
 	TPerCompetenza='M' + CASE WHEN MONTH(@parAData) < 10
 	THEN '0' + CONVERT(VARCHAR(2),MONTH(@parAData))
-	ELSE CONVERT(VARCHAR(2),MONTH(@parAData))
-	END + ' ' + UPPER(SUBSTRING(DATENAME(month,@parAData),1,1)) + SUBSTRING(DATENAME(month,@parAData),2,LEN(DATENAME(month,@parAData))-1),
-	-- CodIVAxPlus=NULL,
+	ELSE CONVERT(VARCHAR(2),MONTH(@parAData)) END,
+	CodIVAxPlus=NULL,
 	CodContPartxPlus=NULL,
 	SogRit=NULL
 	WHERE Progressivo=(SELECT TOP(1) MaxProg FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt)+1 AND CodiceCliente=(SELECT TOP(1) T1.CodiceCliente FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt);
@@ -246,22 +247,39 @@ BEGIN
 	SET @cnt += 1
 	END
 
-	-- =======================================================================================================================================
+	---- =======================================================================================================================================
 
 	IF OBJECT_ID('tempdb..#TabUpdate')	IS NOT NULL DROP TABLE #TabUpdate;
-	SELECT ROW_NUMBER() OVER (ORDER BY Progressivo ASC, NumeroDocumento ASC) AS Prog, *
-	INTO #TabUpdate
-	FROM  ##OutputResult;
+	IF OBJECT_ID('tempdb..#TabUpdate2')	IS NOT NULL DROP TABLE #TabUpdate2;
 
-	ALTER TABLE #TabUpdate DROP COLUMN Progressivo;
+	SELECT *
+	INTO #TabUpdate
+	FROM ##OutputResult
+	ORDER BY CodiceCliente ASC, NumeroDocumento DESC, 1 ASC;
+	
+	SELECT * FROM #TabUpdate;
+
+	SELECT ROW_NUMBER() OVER (ORDER BY CodiceCliente ASC, NumeroDocumento DESC) AS Prog, *
+	INTO #TabUpdate2
+	FROM #TabUpdate;
+
+	ALTER TABLE #TabUpdate2 DROP COLUMN Progressivo;
+
+	SELECT * FROM #TabUpdate2;
+
 	DELETE FROM ##OutputResult;
 
 	INSERT INTO ##OutputResult
-	SELECT * FROM #TabUpdate;
+	SELECT * FROM #TabUpdate2
+	ORDER BY 1 ASC;
+
+	IF OBJECT_ID('tempdb..#TabUpdate')	IS NOT NULL DROP TABLE #TabUpdate;
+	IF OBJECT_ID('tempdb..#TabUpdate2')	IS NOT NULL DROP TABLE #TabUpdate2;
 
 	-- =======================================================================================================================================
 
-	SELECT * FROM ##OutputResult
+	SELECT * FROM #TabContratti;
+	SELECT * FROM ##OutputResult;
 
 	-- =======================================================================================================================================
 
@@ -279,7 +297,7 @@ BEGIN
 	SET @pwd_name = 'agsoppurg'
 
 	SET @command = 'bcp "SET QUOTED_IDENTIFIER  ON; SELECT * FROM ##OutputResult"'
-	SET @command = REPLACE(REPLACE(@command, CHAR(10), ''), CHAR(13), ' ') +   ' queryout  "' + @par_path + 'Tracciato_Proprietari.txt" -S "' + @server_name + '" -U "' + @user_name + '" -P "' + @pwd_name + '" -c -C ACP -t "|"'
+	SET @command = REPLACE(REPLACE(@command, CHAR(10), ''), CHAR(13), ' ') +   ' queryout  "' + @par_path + 'Tracciato_Proprietari_PN.txt" -S "' + @server_name + '" -U "' + @user_name + '" -P "' + @pwd_name + '" -c -C ACP -t "|"'
 	print @command
 	
 	INSERT INTO @esito
@@ -304,4 +322,5 @@ BEGIN
 	IF OBJECT_ID('tempdb..#TabCompensi')	IS NOT NULL DROP TABLE #TabCompensi;
 	IF OBJECT_ID('tempdb..##OutputResult')	IS NOT NULL DROP TABLE ##OutputResult;
 END
+
 
