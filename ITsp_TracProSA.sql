@@ -1,6 +1,6 @@
 USE [up_marchioricontino_sacile]
 GO
-/****** Object:  StoredProcedure [dbo].[ITsp_TracProSA]    Script Date: 23/05/2022 16:47:50 ******/
+/****** Object:  StoredProcedure [dbo].[ITsp_TracPro]    Script Date: 09/06/2022 17:56:46 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -9,7 +9,7 @@ GO
 -- Author:		Enrico Piccin
 -- Create date: 18 Maggio 2022
 -- =============================================
-ALTER PROCEDURE [dbo].[ITsp_TracProSA] (@parDaData AS DATE, @parAData AS DATE, @par_path AS VARCHAR(50), @outEsito AS VARCHAR(100) OUTPUT)
+ALTER PROCEDURE [dbo].[ITsp_TracPro] (@parDaData AS DATE, @parAData AS DATE, @par_path AS VARCHAR(50), @outEsito AS VARCHAR(100) OUTPUT)
 AS
 BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from
@@ -54,11 +54,11 @@ BEGIN
 
 	-- =======================================================================================================================================
 
-	SELECT ROW_NUMBER() OVER(ORDER BY M.MbaisCSer ASC) AS Progressivo,
+	SELECT ROW_NUMBER() OVER(ORDER BY SogControparte.AsogCAsog ASC, 'S_'+RIGHT(M.MbaisCMbais,13) DESC) AS Progressivo,
 	NULL AS Nullo,
 	LEFT(TcsoCTcso,1) AS CausaleDocumento, 
 	'S_'+RIGHT(M.MbaisCMbais,13) AS NumeroDocumento,
-	CONVERT(VARCHAR(10), M.MbaisTins, 111) AS DataEsportazione,
+	CONVERT(VARCHAR(10), M.MbaisTins,103) AS DataEsportazione,
 	NULL AS SerieDocumento,
 	TabC.SedeEmissione AS SedeEmissione,
 	R2.RgrsCrgrs AS TipoSoggetto,
@@ -121,7 +121,7 @@ BEGIN
 	'M' + CASE WHEN MONTH(M.MbaisTins) < 10
 	THEN '0' + CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
 	ELSE CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
-	END + ' ' + UPPER(SUBSTRING(DATENAME(month,M.MbaisTins),1,1)) + SUBSTRING(DATENAME(month,M.MbaisTins),2,LEN(DATENAME(month,M.MbaisTins))-1) AS TPerCompetenza,
+	END AS TPerCompetenza,
 	12 AS NPerCompetenza,
 	TaliCTali AS CodIVAxPlus,
 	AscoCAsco AS CodContPartxPlus,
@@ -177,7 +177,7 @@ BEGIN
 	WHERE MbaisCRMcso = 25 AND TG0.TgrsCTgrs = 'EXPLUS' AND R0.RgrsCRgrs = 'S' 
 	AND TG1.TgrsCTgrs='TSO' AND TG2.TgrsCTgrs='TSO'
 	AND M.MbaisTins BETWEEN @parDaData AND @parAData
-	ORDER BY 1 ASC, SogControparte.AsogCAsog ASC;
+	ORDER BY SogControparte.AsogCAsog ASC, NumeroDocumento DESC, 1 ASC;
 
 	-- =======================================================================================================================================
 
@@ -221,7 +221,7 @@ BEGIN
 	UPDATE ##OutputResult SET
 	CausaleDocumento='C',
 	NumeroDocumento='COMP_'+(SELECT TOP(1) T1.CodiceCliente FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt),
-	DataEsportazione=CONVERT(VARCHAR(10), @parAData, 111),
+	DataEsportazione=CONVERT(VARCHAR(10), @parAData, 103),
 	-- SedeEmissione='SEDES',
 	TipoSoggetto='C',
 	CodiceControparte=NULL,
@@ -241,9 +241,8 @@ BEGIN
 	APerCompetenza=YEAR(@parAData),
 	TPerCompetenza='M' + CASE WHEN MONTH(@parAData) < 10
 	THEN '0' + CONVERT(VARCHAR(2),MONTH(@parAData))
-	ELSE CONVERT(VARCHAR(2),MONTH(@parAData))
-	END + ' ' + UPPER(SUBSTRING(DATENAME(month,@parAData),1,1)) + SUBSTRING(DATENAME(month,@parAData),2,LEN(DATENAME(month,@parAData))-1),
-	-- CodIVAxPlus=NULL,
+	ELSE CONVERT(VARCHAR(2),MONTH(@parAData)) END,
+	CodIVAxPlus=NULL,
 	CodContPartxPlus=NULL,
 	SogRit=NULL
 	WHERE Progressivo=(SELECT TOP(1) MaxProg FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt)+1 AND CodiceCliente=(SELECT TOP(1) T1.CodiceCliente FROM #TabCompensi T1 INNER JOIN ##OutputResult T2 ON T1.CodiceCliente=T2.CodiceCliente WHERE Prog=@cnt);
@@ -255,19 +254,36 @@ BEGIN
 	-- =======================================================================================================================================
 
 	IF OBJECT_ID('tempdb..#TabUpdate')	IS NOT NULL DROP TABLE #TabUpdate;
-	SELECT ROW_NUMBER() OVER (ORDER BY Progressivo ASC, NumeroDocumento ASC) AS Prog, *
-	INTO #TabUpdate
-	FROM  ##OutputResult;
+	IF OBJECT_ID('tempdb..#TabUpdate2')	IS NOT NULL DROP TABLE #TabUpdate2;
 
-	ALTER TABLE #TabUpdate DROP COLUMN Progressivo;
+	SELECT *
+	INTO #TabUpdate
+	FROM ##OutputResult
+	ORDER BY CodiceCliente ASC, NumeroDocumento DESC, 1 ASC;
+	
+	SELECT * FROM #TabUpdate;
+
+	SELECT ROW_NUMBER() OVER (ORDER BY CodiceCliente ASC, NumeroDocumento DESC) AS Prog, *
+	INTO #TabUpdate2
+	FROM #TabUpdate;
+
+	ALTER TABLE #TabUpdate2 DROP COLUMN Progressivo;
+
+	SELECT * FROM #TabUpdate2;
+
 	DELETE FROM ##OutputResult;
 
 	INSERT INTO ##OutputResult
-	SELECT * FROM #TabUpdate;
+	SELECT * FROM #TabUpdate2
+	ORDER BY 1 ASC;
+
+	IF OBJECT_ID('tempdb..#TabUpdate')	IS NOT NULL DROP TABLE #TabUpdate;
+	IF OBJECT_ID('tempdb..#TabUpdate2')	IS NOT NULL DROP TABLE #TabUpdate2;
 
 	-- =======================================================================================================================================
 
 	SELECT * FROM ##OutputResult
+	ORDER BY 1;
 
 	-- =======================================================================================================================================
 
@@ -284,8 +300,8 @@ BEGIN
 	SET @user_name = 'grupposga'
 	SET @pwd_name = 'agsoppurg'
 
-	SET @command = 'bcp "SET QUOTED_IDENTIFIER  ON; SELECT * FROM ##OutputResult"'
-	SET @command = REPLACE(REPLACE(@command, CHAR(10), ''), CHAR(13), ' ') +   ' queryout  "' + @par_path + 'Tracciato_Proprietari.txt" -S "' + @server_name + '" -U "' + @user_name + '" -P "' + @pwd_name + '" -c -C ACP -t "|"'
+	SET @command = 'bcp "SET QUOTED_IDENTIFIER  ON; SELECT * FROM ##OutputResult ORDER BY 1"'
+	SET @command = REPLACE(REPLACE(@command, CHAR(10), ''), CHAR(13), ' ') +   ' queryout  "' + @par_path + 'Tracciato_Proprietari_SA.txt" -S "' + @server_name + '" -U "' + @user_name + '" -P "' + @pwd_name + '" -c -C ACP -t "|"'
 	print @command
 	
 	INSERT INTO @esito
