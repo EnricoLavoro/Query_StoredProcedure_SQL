@@ -1,6 +1,6 @@
 USE [up_marchioricontino]
 GO
-/****** Object:  StoredProcedure [dbo].[ITsp_TracInqPN]    Script Date: 23/05/2022 13:58:25 ******/
+/****** Object:  StoredProcedure [dbo].[ITsp_TracInq]    Script Date: 09/06/2022 17:54:27 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -9,7 +9,7 @@ GO
 -- Author:		Enrico Piccin
 -- Create date: 12 Maggio 2022
 -- =============================================
-ALTER PROCEDURE [dbo].[ITsp_TracInqPN] (@parDaData AS DATE, @parAData AS DATE, @par_path AS VARCHAR(50), @outEsito AS VARCHAR(100) OUTPUT)
+ALTER PROCEDURE [dbo].[ITsp_TracInq] (@parDaData AS DATE, @parAData AS DATE, @par_path AS VARCHAR(50), @outEsito AS VARCHAR(100) OUTPUT)
 AS
 BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from
@@ -50,7 +50,7 @@ BEGIN
 	NULL AS Nullo,
 	LEFT(TcsoCTcso,1) AS CausaleDocumento, 
 	'P_'+RIGHT(M.MbaisCMbais,13) AS NumeroDocumento,
-	CONVERT(VARCHAR(10), M.MbaisTins, 111) AS DataEsportazione,
+	CONVERT(VARCHAR(10), M.MbaisTins,103) AS DataEsportazione,
 	NULL AS SerieDocumento,
 	'SEDEP' AS SedeEmissione,
 	CASE WHEN R1.RgrsCRgrs = 'I' THEN 'Q' ELSE R1.RGrsCRgrs END AS TipoSoggetto,
@@ -113,7 +113,7 @@ BEGIN
 	'M' + CASE WHEN MONTH(M.MbaisTins) < 10
 	THEN '0' + CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
 	ELSE CONVERT(VARCHAR(2),MONTH(M.MbaisTins))
-	END + ' ' + UPPER(SUBSTRING(DATENAME(month,M.MbaisTins),1,1)) + SUBSTRING(DATENAME(month,M.MbaisTins),2,LEN(DATENAME(month,M.MbaisTins))-1) AS TPerCompetenza,
+	END AS TPerCompetenza,
 	12 AS NPerCompetenza,
 	TaliCTali AS CodIVAxPlus,
 	AscoCAsco AS CodContPartxPlus,
@@ -186,7 +186,7 @@ BEGIN
 	SET @pwd_name = 'agsoppurg'
 
 	SET @command = 'bcp "SET QUOTED_IDENTIFIER  ON; SELECT * FROM ##OutputResult"'
-	SET @command = REPLACE(REPLACE(@command, CHAR(10), ''), CHAR(13), ' ') +   ' queryout  "' + @par_path + 'Tracciato_Inquilini.txt" -S "' + @server_name + '" -U "' + @user_name + '" -P "' + @pwd_name + '" -c -C ACP -t "|"'
+	SET @command = REPLACE(REPLACE(@command, CHAR(10), ''), CHAR(13), ' ') +   ' queryout  "' + @par_path + 'Tracciato_Inquilini_PN.txt" -S "' + @server_name + '" -U "' + @user_name + '" -P "' + @pwd_name + '" -c -C ACP -t "|"'
 	print @command
 	
 	INSERT INTO @esito
@@ -213,4 +213,5 @@ BEGIN
 	IF OBJECT_ID('tempdb..#TabContratti')	IS NOT NULL DROP TABLE #TabContratti;
 	IF OBJECT_ID('tempdb..##OutputResult')	IS NOT NULL DROP TABLE ##OutputResult;
 END
+
 
