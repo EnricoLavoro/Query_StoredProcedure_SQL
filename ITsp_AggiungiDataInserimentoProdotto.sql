@@ -1,3 +1,5 @@
+use up_tecnoclean
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -14,6 +16,11 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
 
+	DECLARE @varArtaCSer INT
+	DECLARE @varVlatCSer INT
+	DECLARE @prig INT
+	DECLARE @varDIns DATETIME
+
     SELECT ArtbCArtb, AttrCAttr, VlatCVlat
 	FROM ArticoliBase
 	INNER JOIN ArticoliAttributi ON ArtaCSerArtb = ArtbCSer
@@ -23,11 +30,6 @@ BEGIN
 
 	IF(@@ROWCOUNT = 0)
 	BEGIN 
-		DECLARE @varArtaCSer INT
-		DECLARE @varVlatCSer INT
-		DECLARE @prig INT
-		DECLARE @varDIns DATETIME
-
 		EXEC ProtocolloSerialTabellaGetNext 'ArticoliAttributi', 1 , @varArtaCSer OUTPUT
 		EXEC ProtocolloSerialTabellaGetNext 'ValoriAttributo',   1 , @varVlatCSer OUTPUT
 		
@@ -35,9 +37,7 @@ BEGIN
 		IF @prig is null SET @prig = 1 
 		ELSE SET @prig = @prig+1
 
-		SET @varDIns = FORMAT (GETDATE(), 'dd/MM/yyyy HH:mm:ss')
-
-		SELECT @varArtaCSer, @varVlatCSer, @prig, @varDIns
+		SET @varDIns = GETDATE()
 
 		INSERT INTO [dbo].[ArticoliAttributi]
 				   ([ArtaCSer]
@@ -59,10 +59,10 @@ BEGIN
 				   ,@parArtbCSer
 				   ,(SELECT AttrCSer FROM Attributi WHERE AttrCAttr = 'DINS')
 				   ,@varVlatCSer
-				   ,NULL
+				   ,''
 				   ,1
 				   ,''
-				   ,@varDIns
+				   ,FORMAT (@varDIns, 'dd/MM/yyyy HH:mm:ss')
 				   ,0
 				   ,226
 				   ,'N'
@@ -84,7 +84,7 @@ BEGIN
 				(@varVlatCSer
 				,@prig
 				,(SELECT AttrCSer FROM Attributi WHERE AttrCAttr = 'DINS')
-				,@varDIns
+				,FORMAT (@varDIns, 'dd/MM/yyyy HH:mm:ss')
 				,'Data inserimento articolo'
 				,''
 				,''
@@ -95,7 +95,11 @@ BEGIN
 			SET @varDIns = GETDATE()
 
 			UPDATE [dbo].[ValoriAttributo]
-			   SET [VlatCVlat] = @varDIns
-			 WHERE VlatCSer = (SELECT ArtaCSerVlat FROM ArticoliAttributi WHERE ArtaCSerAttr = @parArtbCSer)
+			   SET [VlatCVlat] = FORMAT (@varDIns, 'dd/MM/yyyy HH:mm:ss')
+			 WHERE VlatCSer = (SELECT ArtaCSerVlat FROM ArticoliAttributi WHERE ArtaCSerArtb = @parArtbCSer AND ArtaCSerAttr = (SELECT AttrCSer FROM Attributi WHERE AttrCAttr = 'DINS'))
+
+			 UPDATE [dbo].[ArticoliAttributi]
+			   SET [ArtaTValAtt] = FORMAT (@varDIns, 'dd/MM/yyyy HH:mm:ss')
+			 WHERE ArtaCSerArtb = @parArtbCSer AND ArtaCSerAttr = (SELECT AttrCSer FROM Attributi WHERE AttrCAttr = 'DINS')
 		END
 END
