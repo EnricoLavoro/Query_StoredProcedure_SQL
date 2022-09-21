@@ -28,6 +28,9 @@ ALTER PROCEDURE [dbo].[ITsp_ALRM_BuchiProtocollo] @RetVal INTeger OUTPUT, @RetSt
 -- DDT CONTO/LAVORO
 -- MbaisCRMcso = 25
 
+-- FATTURE VENDITA ITALIA E ESTERO
+-- MbaisCRMcso IN (4,23)
+
 -- NOTE DI CREDITO
 -- MbaisCRMcso IN (50,5) -- 5 = NCC, 50 = NCE
 
@@ -54,6 +57,7 @@ DECLARE @numBatchJobId INT = 1
 DECLARE @OutCursorID INT = 1
 DECLARE @InCursorID INT
 DECLARE @numMancPerRig INT
+DECLARE @primCodPerRig VARCHAR(2000)
 DECLARE @numMoltepl INT = 0
 DECLARE @strOut VARCHAR(8000) = ''
 
@@ -95,23 +99,11 @@ EXECUTE @RC = [dbo].[__upCodiciMancantiStop]
 
 INSERT INTO @tabNumMan (BatchJobId,numeroMancanti) VALUES (@BatchJobId,@numeroMancanti)
 
--- NOTE DI CREDITO
-SET @Filtro = 'AND MbaisCRMcso IN (50,5) AND DATEDIFF(YEAR,MbaisTins,GETDATE())=2'
+-- FATTURE VENDITA (fatture vendita italia e estero – tutte le note di credito e di addebito)
+SET @Filtro = '(MbaisCRMcso IN (4,5,23,50) OR TcsoDTcso LIKE ''%ADDEBITO%'') AND DATEDIFF(YEAR,MbaisTins,GETDATE())=2'
 SET @BatchJobId = 4
 
-EXECUTE @RC = [dbo].[__upCodiciMancantiStop] 
-   @Filtro
-  ,@BatchJobId
-  ,@MaxNumeroMancanti
-  ,@numeroMancanti OUTPUT
-
-INSERT INTO @tabNumMan (BatchJobId,numeroMancanti) VALUES (@BatchJobId,@numeroMancanti)
-
--- NOTE DI ADDEBITO
-SET @Filtro = 'AND MbaisCRTcso IN (41,39,40,42) AND DATEDIFF(YEAR,MbaisTins,GETDATE())=2'
-SET @BatchJobId = 5
-
-EXECUTE @RC = [dbo].[__upCodiciMancantiStop] 
+EXECUTE @RC = [dbo].[ITsp_upCodiciMancantiStop] 
    @Filtro
   ,@BatchJobId
   ,@MaxNumeroMancanti
@@ -121,20 +113,23 @@ INSERT INTO @tabNumMan (BatchJobId,numeroMancanti) VALUES (@BatchJobId,@numeroMa
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
-WHILE @numBatchJobId <= 5
+WHILE @numBatchJobId <= 4
 BEGIN
 	SET @strOut = 
 	CASE 
 		WHEN @numBatchJobId = 1 THEN 'Le DDT VENDITA mancanti sono '
 		WHEN @numBatchJobId = 2 THEN 'Le DDT OMAGGIO mancanti sono '
 		WHEN @numBatchJobId = 3 THEN 'Le DDT C/LAVORO mancanti sono '
-		WHEN @numBatchJobId = 4 THEN 'Le NOTE DI CREDITO mancanti sono '
-		WHEN @numBatchJobId = 5 THEN 'Le NOTE DI ADDEBITO mancanti sono '
+		WHEN @numBatchJobId = 4 THEN 'Le FATTURE VENDITA mancanti sono '
 	END+CONVERT(VARCHAR,(SELECT numeroMancanti FROM @tabNumMan WHERE BatchJobId=@numBatchJobId))+'. In particolare: '+CHAR(13)+CHAR(10)
 
 	WHILE @OutCursorID + @numMoltepl <= (SELECT numeroMancanti FROM @tabNumMan WHERE BatchJobId=@numBatchJobId)
 	BEGIN
 		SET @numMancPerRig = (SELECT scmstNMancanti
+		FROM StampaCodiciMancantiStop
+		WHERE scmstCserRepRif=@numBatchJobId AND scmstPrig=@OutCursorID)
+
+		SET @primCodPerRig = (SELECT scmstCod1
 		FROM StampaCodiciMancantiStop
 		WHERE scmstCserRepRif=@numBatchJobId AND scmstPrig=@OutCursorID)
 	
@@ -143,13 +138,17 @@ BEGIN
 		WHILE @InCursorID <= @numMancPerRig
 		BEGIN
 			------------------------------------------------------------------------------------------------------------------------------------
-			SET @strOut = @strOut+LEFT((SELECT scmstCod1
-			FROM StampaCodiciMancantiStop
-			WHERE scmstCserRepRif=@numBatchJobId AND scmstPrig=@OutCursorID),7)+ 
-			RIGHT('000000000'+CONVERT(VARCHAR,
-			(SELECT CONVERT(INT,RIGHT((SELECT scmstCod1
-			FROM StampaCodiciMancantiStop
-			WHERE scmstCserRepRif=@numBatchJobId AND scmstPrig=@OutCursorID),9))+@InCursorID)),9)+CHAR(13)+CHAR(10)
+			SET @strOut = 
+				CASE WHEN @numBatchJobId = 4 THEN
+					@strOut+(SELECT LEFT(@primCodPerRig,CHARINDEX('/',@primCodPerRig)))+
+					CONVERT(VARCHAR,CONVERT(INT,(SELECT SUBSTRING(@primCodPerRig,CHARINDEX('/',@primCodPerRig)+1,LEN(@primCodPerRig)-CHARINDEX('/',REVERSE(@primCodPerRig))-CHARINDEX('/',@primCodPerRig))))+@InCursorID)+
+					(SELECT RIGHT(@primCodPerRig,CHARINDEX('/',REVERSE(@primCodPerRig))))
+					+CHAR(13)+CHAR(10)
+				ELSE
+					@strOut+LEFT(@primCodPerRig,7)+ 
+					RIGHT('000000000'+CONVERT(VARCHAR,
+					(SELECT CONVERT(INT,RIGHT(@primCodPerRig,9))+@InCursorID)),9)+CHAR(13)+CHAR(10)
+				END
 			------------------------------------------------------------------------------------------------------------------------------------
 
 			SET @InCursorID = @InCursorID + 1
@@ -174,8 +173,7 @@ END
 		ISNULL(CONVERT(VARCHAR(8000),(SELECT esito FROM @tabNumMan WHERE BatchJobId=1 AND numeroMancanti<>0)),'')+CHAR(13)+CHAR(10)+
 		ISNULL(CONVERT(VARCHAR(8000),(SELECT esito FROM @tabNumMan WHERE BatchJobId=2 AND numeroMancanti<>0)),'')+CHAR(13)+CHAR(10)+
 		ISNULL(CONVERT(VARCHAR(8000),(SELECT esito FROM @tabNumMan WHERE BatchJobId=3 AND numeroMancanti<>0)),'')+CHAR(13)+CHAR(10)+
-		ISNULL(CONVERT(VARCHAR(8000),(SELECT esito FROM @tabNumMan WHERE BatchJobId=4 AND numeroMancanti<>0)),'')+CHAR(13)+CHAR(10)+
-		ISNULL(CONVERT(VARCHAR(8000),(SELECT esito FROM @tabNumMan WHERE BatchJobId=5 AND numeroMancanti<>0)),'')+CHAR(13)+CHAR(10)
+		ISNULL(CONVERT(VARCHAR(8000),(SELECT esito FROM @tabNumMan WHERE BatchJobId=4 AND numeroMancanti<>0)),'')+CHAR(13)+CHAR(10)
 	END
 END
 GO
